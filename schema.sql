@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS  Livros (
 CREATE INDEX idx_livros_autor_id ON Livros(autor_id);
 CREATE INDEX idx_livros_editora_id ON Livros(editora_id);
 CREATE INDEX idx_livros_categoria_id ON Livros(categoria_id);
+CREATE INDEX idx_quantidade_estoque ON Livros(quantidade_estoque);
 
 
 CREATE TABLE IF NOT EXISTS Clientes (
@@ -84,8 +85,8 @@ CREATE TABLE IF NOT EXISTS Pedidos (
     PRIMARY KEY (id)
 );
 
-
 CREATE INDEX idx_pedidos_cliente_id ON Pedidos(cliente_id);
+CREATE INDEX idx_data_pedido ON Pedidos(data_pedido);
 
 CREATE TABLE IF NOT EXISTS Itens_Pedido (
     id SERIAL,
