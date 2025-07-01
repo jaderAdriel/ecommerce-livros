@@ -35,3 +35,5 @@ SELECT * FROM vw_clientes_ativos;
 
 
 --  ○ vw_estoque_baixo: Exibe os livros com quantidade em estoque abaixo de um determinado limite.
+CREATE OR REPLACE VIEW vw_estoque_baixo AS
+  SELECT * FROM livros WHERE quantidade_estoque <= 4;
