@@ -119,3 +119,10 @@ CREATE TABLE IF NOT EXISTS Carrinho(
 
     PRIMARY KEY (id)
 );
+
+CREATE TABLE IF NOT EXISTS relatorio_vendas_categoria (
+    gerado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP PRIMARY KEY,
+    categoria VARCHAR,
+    total_vendido INT,
+    total_faturado NUMERIC(12,2)
+);
