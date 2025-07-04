@@ -6,16 +6,16 @@ AS $$
 BEGIN
     -- Validação de datas
     IF p_data_inicio IS NULL OR p_data_fim IS NULL THEN
-        RAISE EXCEPTION 'Datas devem ser fornecidas';
-    END IF;
-
-    IF p_data_inicio IS NULL OR p_data_fim IS NULL THEN
         RAISE EXCEPTION 'As datas de início e fim devem ser fornecidas.';
     END IF;
 
     IF p_data_inicio > p_data_fim THEN
         RAISE EXCEPTION 'A data de início não pode ser posterior à data de fim.';
     END IF;
+    
+    -- Limpando a tabela para idempotência
+    
+    TRUNCATE TABLE relatorio_vendas_categoria;
 
     -- Insere dados do relatório
     INSERT INTO relatorio_vendas_categoria(categoria, total_vendido, total_faturado)
@@ -27,7 +27,8 @@ BEGIN
     JOIN itens_pedido ip ON p.id = ip.pedido_id
     JOIN livros l ON ip.livro_id = l.id
     JOIN categorias cat ON l.categoria_id = cat.id
-    WHERE DATE(p.data_pedido) BETWEEN p_data_inicio AND p_data_fim
+    WHERE p.status <> 'CANCELADO' AND p.data_pedido >= p_data_inicio
+    AND p.data_pedido < (p_data_fim + INTERVAL '1 day') 
     GROUP BY cat.nome;
 END;
 $$ LANGUAGE plpgsql;
