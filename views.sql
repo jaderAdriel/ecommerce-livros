@@ -18,7 +18,7 @@ GROUP BY item.livro_id, Livros.titulo, Autores.nome, Autores.id
 ORDER BY total_vendido DESC
 LIMIT 10;
 
-EXPLAIN ANALYSE SELECT livro_id, total_vendido, livro_titulo, autor_nome, autor_id from vw_livros_mais_vendidos;
+-- EXPLAIN ANALYSE SELECT livro_id, total_vendido, livro_titulo, autor_nome, autor_id from vw_livros_mais_vendidos;
 
 
 
@@ -30,10 +30,12 @@ JOIN Pedidos p on cl.id = p.cliente_id
 WHERE p.data_pedido >=  CURRENT_DATE - INTERVAL '6 months'
 GROUP BY cl.id;
 
+-- EXPLAIN ANALYSE SELECT * from vw_clientes_ativos;
 
-SELECT * FROM vw_clientes_ativos;
 
 
 --  ○ vw_estoque_baixo: Exibe os livros com quantidade em estoque abaixo de um determinado limite.
 CREATE OR REPLACE VIEW vw_estoque_baixo AS
   SELECT * FROM livros WHERE quantidade_estoque <= 4;
+
+-- EXPLAIN ANALYSE SELECT * from vw_estoque_baixo;

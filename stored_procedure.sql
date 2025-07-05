@@ -33,6 +33,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+
+
 CREATE OR REPLACE PROCEDURE sp_inserir_cliente(
     c_nome VARCHAR(100),
     c_email VARCHAR(40),
@@ -55,6 +58,7 @@ BEGIN
         RAISE EXCEPTION 'Todos os campos obrigatórios devem ser fornecidos (nome, email, senha, estado, cidade, rua, numero)';
     END IF;
 
+    -- Normaliza os dados
     c_endereco_estado := LOWER(c_endereco_estado);
     c_endereco_cidade := LOWER(c_endereco_cidade);
     c_endereco_bairro := LOWER(c_endereco_bairro);
@@ -85,6 +89,58 @@ END
 $$;
 
 
+
+CREATE OR REPLACE PROCEDURE sp_inserir_livro(
+    IN l_titulo VARCHAR(124),
+    IN l_isbn VARCHAR(17),
+    IN l_preco DECIMAL(10, 2),
+    IN l_quantidade_estoque INTEGER,
+    IN autor_id INTEGER,
+    IN editora_id INTEGER,
+    IN categoria_id INTEGER,
+    OUT livro_id INTEGER
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Validação básica dos dados
+    IF l_titulo IS NULL OR l_isbn IS NULL OR l_preco IS NULL OR l_quantidade_estoque IS NULL
+           OR autor_id IS NULL OR categoria_id IS NULL OR editora_id IS NULL THEN
+        RAISE EXCEPTION 'Todos os campos obrigatórios devem ser fornecidos';
+    END IF;
+
+    BEGIN
+        INSERT INTO Livros(titulo, autor_id, isbn, editora_id, preco, quantidade_estoque, categoria_id)
+        VALUES (l_titulo, autor_id, l_isbn, editora_id, l_preco, l_quantidade_estoque, categoria_id)
+        RETURNING id INTO livro_id;
+
+
+        RAISE NOTICE 'LIVRO INSERIDO COM SUCESSO. ID: %', livro_id;
+    EXCEPTION
+        WHEN unique_violation THEN
+            RAISE EXCEPTION 'Já existe um livro com o ISBN "%"', l_isbn
+            USING ERRCODE = 'P0002';
+        WHEN foreign_key_violation THEN
+            RAISE EXCEPTION 'Violação de chave estrangeira : %', SQLERRM
+            USING ERRCODE = '23503'; -- 23503 -> Violação de chave ESTRANGEIRA
+        WHEN OTHERS THEN
+            RAISE EXCEPTION 'Erro ao inserir livro: %', SQLERRM;
+    END;
+END;
+$$;
+
+
+
+DO $$
+DECLARE
+    livro_id INTEGER;
+BEGIN
+    CALL sp_inserir_livro('Títuloa', '1231aa', 10.0, 5, 1, 1, 1, livro_id);
+    RAISE NOTICE 'ID do livro inserido: %', livro_id;
+END;
+$$;
+
+
 CREATE OR REPLACE PROCEDURE sp_inserir_livro_por_nomes(
     IN l_titulo VARCHAR(124),
     IN l_isbn VARCHAR(17),
@@ -101,7 +157,7 @@ DECLARE
     editora_id INTEGER;
     categoria_id INTEGER;
 BEGIN
-
+    -- Normaliza os dados
     editora_nome   := LOWER(editora_nome);
     editora_pais   := LOWER(editora_pais);
     categoria_nome := LOWER(categoria_nome);
