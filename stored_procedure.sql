@@ -209,3 +209,108 @@ BEGIN
     END;
 END;
 $$;
+
+
+
+CREATE TYPE Item_Info AS (
+    livro_id INTEGER,
+    quantidade INTEGER
+);
+
+
+CREATE OR REPLACE PROCEDURE sp_fazer_pedido(
+    IN p_cliente_id INTEGER,
+    IN p_itens Item_Info[],
+    IN p_data_pedido TIMESTAMP
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_pedido_id INTEGER;
+BEGIN
+
+    IF p_cliente_id IS NULL THEN
+        RAISE EXCEPTION 'ID de cliente não pode ser nulo';
+    end if;
+
+    IF p_itens IS NULL OR array_length(p_itens, 1) < 1 THEN
+        RAISE EXCEPTION 'Precisa ser informado ao menos um item para prosseguir com pedido';
+    end if;
+
+    IF p_data_pedido IS NULL THEN
+        p_data_pedido := CURRENT_TIMESTAMP;
+    end if;
+
+
+    INSERT INTO Pedidos(cliente_id, data_pedido)
+    VALUES (p_cliente_id, p_data_pedido)
+    RETURNING id INTO v_pedido_id;
+
+    CALL sp_inserir_item_pedido(v_pedido_id, p_itens);
+    RAISE NOTICE 'PEDIDO FEITO COM SUCESSO. ID % ', v_pedido_id;
+END;
+$$;
+
+
+
+CREATE OR REPLACE PROCEDURE sp_inserir_item_pedido (
+    IN p_pedido_id INTEGER,
+    IN p_itens Item_Info[]
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_item Item_Info;
+    v_preco DECIMAL(10, 2);
+    v_quantidade_estoque INTEGER;
+BEGIN
+    FOREACH v_item IN ARRAY p_itens LOOP
+        SELECT preco, quantidade_estoque
+        INTO v_preco, v_quantidade_estoque
+        FROM livros
+        WHERE id = v_item.livro_id;
+
+        -- A variavél found é falsa quando o SELECT INTO não retornou algo
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Livro com ID % não encontrado', v_item.livro_id;
+        END IF;
+
+        IF v_item.quantidade IS NULL OR v_item.quantidade < 1 THEN
+            RAISE EXCEPTION 'Quantidade inválida para livro ID %: %', v_item.livro_id, v_item.quantidade;
+        end if;
+
+        IF v_quantidade_estoque < v_item.quantidade THEN
+            RAISE EXCEPTION 'O livro com ID % não possui estoque suficiente. Quantidade desejada ''%'', Quantidade em estoque ''%'' ',
+                v_item.livro_id, v_item.quantidade, v_quantidade_estoque;
+        end if;
+
+        -- Adiciona o item ao pedido
+        INSERT INTO Itens_Pedido(pedido_id, livro_id, quantidade, preco_unitario)
+        VALUES (p_pedido_id, v_item.livro_id, v_item.quantidade, v_preco);
+
+        -- Atualiza o estoque
+        BEGIN
+            UPDATE Livros
+            SET quantidade_estoque = quantidade_estoque - v_item.quantidade
+            WHERE id = v_item.livro_id;
+        EXCEPTION
+            WHEN OTHERS THEN
+                RAISE EXCEPTION 'Erro ao atualizar estoque do livro ID %: %', v_item.livro_id, SQLERRM;
+        END;
+
+    END LOOP;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE EXCEPTION 'Erro ao inserir itens ao pedido: %', SQLERRM;
+end;
+$$;
+
+-- EXEMPLO:
+-- CALL sp_fazer_pedido(
+--     2, -- > id do cliente
+--     ARRAY[ --> Array com linhas genericas, que representa itens do pedido (livro_id, quantidade)
+--         ROW(6, 1)::Item_Info,
+--         ROW(5, 3)::Item_Info
+--     ],
+--     '2025-07-05 14:30:00'
+-- );
