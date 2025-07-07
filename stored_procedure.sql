@@ -13,9 +13,11 @@ BEGIN
         RAISE EXCEPTION 'A data de início não pode ser posterior à data de fim.';
     END IF;
     
-    -- Limpando a tabela para idempotência
+    -- Limpando a tabela em caso de duplicata para idempotência
     
-    TRUNCATE TABLE relatorio_vendas_categoria;
+    DELETE FROM relatorio_vendas_categoria
+    WHERE data_inicio = p_data_inicio 
+    AND data_fim = p_data_fim;
 
     -- Insere dados do relatório
     INSERT INTO relatorio_vendas_categoria(categoria, total_vendido, total_faturado)
