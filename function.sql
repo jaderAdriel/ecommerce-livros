@@ -56,3 +56,36 @@ BEGIN
     RETURN ROUND(v_total * v_desconto, 2);
 END;
 $$ LANGUAGE plpgsql
+
+
+-- Função de atualizar quantidade em estoque após uma venda
+CREATE OR REPLACE FUNCTION atualiza_estoque_pedido()
+RETURNS TRIGGER AS $$
+DECLARE
+    item RECORD;
+BEGIN
+    -- Verifica se houve mudança no status
+    IF NEW.status = 'ENVIADO' AND OLD.status <> 'ENVIADO' THEN
+        -- Diminui o estoque
+        FOR item IN
+            SELECT livro_id, quantidade FROM Itens_Pedido WHERE pedido_id = NEW.id
+        LOOP
+            UPDATE Livros
+            SET quantidade_estoque = quantidade_estoque - item.quantidade
+            WHERE id = item.livro_id;
+        END LOOP;
+        
+    ELSIF NEW.status = 'CANCELADO' AND OLD.status = 'ENVIADO' THEN
+        -- Restaura o estoque
+        FOR item IN
+            SELECT livro_id, quantidade FROM Itens_Pedido WHERE pedido_id = NEW.id
+        LOOP
+            UPDATE Livros
+            SET quantidade_estoque = quantidade_estoque + item.quantidade
+            WHERE id = item.livro_id;
+        END LOOP;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
