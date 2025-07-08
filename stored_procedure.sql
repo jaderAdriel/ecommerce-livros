@@ -78,14 +78,14 @@ BEGIN
     RETURNING id INTO v_endereco_id;
 
     BEGIN
-        INSERT INTO Clientes(nome, email, senha, endereco_id) VALUES (p_nome, p_email, p_senha, endereco_id);
+        INSERT INTO Clientes(nome, email, senha, endereco_id) VALUES (p_nome, p_email, p_senha, v_endereco_id);
         RAISE NOTICE 'CLIENTE CADASTRADO COM SUCESSO';
     EXCEPTION
         WHEN unique_violation THEN
             RAISE EXCEPTION 'O e-mail ''%'' já está em uso', p_email
             USING ERRCODE = 'P0002';
         WHEN OTHERS THEN
-            RAISE EXCEPTION 'Erro ao inserir livro: %', SQLERRM;
+            RAISE EXCEPTION 'Erro inesperado ao inserir cliente: %', SQLERRM;
     END;
 
 END
