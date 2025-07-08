@@ -20,9 +20,11 @@ BEGIN
     AND data_fim = p_data_fim;
 
     -- Insere dados do relatório
-    INSERT INTO relatorio_vendas_categoria(categoria, total_vendido, total_faturado)
+    INSERT INTO relatorio_vendas_categoria(data_inicio, data_fim, categoria, total_vendido, total_faturado)
     SELECT
-        cat.nome,
+	p_data_inicio,
+	p_data_fim,
+        p_cat.nome,
         SUM(ip.quantidade),
         SUM(ip.quantidade * ip.preco_unitario)
     FROM pedidos p
