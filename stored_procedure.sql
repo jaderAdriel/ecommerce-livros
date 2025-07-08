@@ -243,61 +243,6 @@ END;
 $$;
 
 
-
-CREATE OR REPLACE PROCEDURE sp_inserir_item_pedido (
-    IN p_pedido_id INTEGER,
-    IN p_itens Item_Info[]
-)
-LANGUAGE plpgsql
-AS $$
-DECLARE
-    v_item Item_Info;
-    v_preco DECIMAL(10, 2);
-    v_quantidade_estoque INTEGER;
-BEGIN
-    FOREACH v_item IN ARRAY p_itens LOOP
-        SELECT preco, quantidade_estoque
-        INTO v_preco, v_quantidade_estoque
-        FROM livros
-        WHERE id = v_item.livro_id;
-
-        -- A variavél found é falsa quando o SELECT INTO não retornou algo
-        IF NOT FOUND THEN
-            RAISE EXCEPTION 'Livro com ID % não encontrado', v_item.livro_id;
-        END IF;
-
-        IF v_item.quantidade IS NULL OR v_item.quantidade < 1 THEN
-            RAISE EXCEPTION 'Quantidade inválida para livro ID %: %', v_item.livro_id, v_item.quantidade;
-        end if;
-
-        IF v_quantidade_estoque < v_item.quantidade THEN
-            RAISE EXCEPTION 'O livro com ID % não possui estoque suficiente. Quantidade desejada ''%'', Quantidade em estoque ''%'' ',
-                v_item.livro_id, v_item.quantidade, v_quantidade_estoque;
-        end if;
-
-        -- Adiciona o item ao pedido
-        INSERT INTO Itens_Pedido(pedido_id, livro_id, quantidade, preco_unitario)
-        VALUES (p_pedido_id, v_item.livro_id, v_item.quantidade, v_preco);
-
-        -- Atualiza o estoque
-        BEGIN
-            UPDATE Livros
-            SET quantidade_estoque = quantidade_estoque - v_item.quantidade
-            WHERE id = v_item.livro_id;
-        EXCEPTION
-            WHEN OTHERS THEN
-                RAISE EXCEPTION 'Erro ao atualizar estoque do livro ID %: %', v_item.livro_id, SQLERRM;
-        END;
-
-    END LOOP;
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE EXCEPTION 'Erro ao inserir itens ao pedido: %', SQLERRM;
-end;
-$$;
-
-
-
 CREATE OR REPLACE PROCEDURE verifica_estoque_item_pedido(p_item_id INTEGER)
 LANGUAGE plpgsql
 AS $$
