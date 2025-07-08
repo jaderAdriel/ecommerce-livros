@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS Pedidos (
     status PEDIDO_STATUS_ENUM DEFAULT 'ABERTO',
     frete DECIMAL(10,2) NOT NULL DEFAULT 0,
 
-    FOREIGN KEY (cliente_id) REFERENCES Clientes(id),
+    FOREIGN KEY (cliente_id) REFERENCES Clientes(id) ON DELETE SET NULL,
     PRIMARY KEY (id)
 );
 
