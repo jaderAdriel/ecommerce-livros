@@ -296,6 +296,149 @@ EXCEPTION
 end;
 $$;
 
+
+
+CREATE OR REPLACE PROCEDURE verifica_estoque_item_pedido(p_item_id INTEGER)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_livro_id INTEGER;
+    v_qtd_solicitada INTEGER;
+    v_qtd_estoque INTEGER;
+BEGIN
+    -- Busca os dados do item de pedido
+    SELECT livro_id, quantidade
+    INTO v_livro_id, v_qtd_solicitada
+    FROM Itens_Pedido
+    WHERE id = p_item_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Item de pedido com ID % não encontrado.', p_item_id;
+    END IF;
+
+    -- Busca a quantidade em estoque do livro
+    SELECT quantidade_estoque
+    INTO v_qtd_estoque
+    FROM Livros
+    WHERE id = v_livro_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Livro com ID % não encontrado.', v_livro_id;
+    END IF;
+
+    -- Verifica se há estoque suficiente
+    IF v_qtd_estoque < v_qtd_solicitada THEN
+        RAISE EXCEPTION 'Estoque insuficiente para o livro ID %. Solicitado: %, Disponível: %.',
+            v_livro_id, v_qtd_solicitada, v_qtd_estoque;
+    END IF;
+END;
+$$;
+
+-- Procedures de gerenciamento de clientes
+CREATE OR REPLACE PROCEDURE criar_cliente(
+    p_nome VARCHAR,
+    p_email VARCHAR,
+    p_senha TEXT,
+    p_endereco_id INTEGER
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Verifica se o e-mail já existe
+    IF EXISTS (SELECT 1 FROM Clientes WHERE email = p_email) THEN
+        RAISE EXCEPTION 'Já existe um cliente com o e-mail: %', p_email;
+    END IF;
+
+    -- Insere o cliente
+    INSERT INTO Clientes (nome, email, senha, endereco_id)
+    VALUES (p_nome, p_email, p_senha, p_endereco_id);
+END;
+$$;
+
+
+CREATE OR REPLACE PROCEDURE editar_cliente(
+    p_id INTEGER,
+    p_nome VARCHAR DEFAULT NULL,
+    p_email VARCHAR DEFAULT NULL,
+    p_senha TEXT DEFAULT NULL,
+    p_rua VARCHAR DEFAULT NULL,
+    p_numero VARCHAR DEFAULT NULL,
+    p_complemento VARCHAR DEFAULT NULL,
+    p_bairro VARCHAR DEFAULT NULL,
+    p_cidade VARCHAR DEFAULT NULL,
+    p_estado VARCHAR DEFAULT NULL
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_endereco_id INTEGER;
+BEGIN
+    -- Verifica se o cliente existe
+    IF NOT EXISTS (SELECT 1 FROM Clientes WHERE id = p_id) THEN
+        RAISE EXCEPTION 'Cliente com ID % não encontrado.', p_id;
+    END IF;
+
+    -- Atualiza os dados do cliente, se fornecidos
+    IF p_nome IS NOT NULL THEN
+        UPDATE Clientes SET nome = p_nome WHERE id = p_id;
+    END IF;
+
+    IF p_email IS NOT NULL THEN
+        UPDATE Clientes SET email = p_email WHERE id = p_id;
+    END IF;
+
+    IF p_senha IS NOT NULL THEN
+        UPDATE Clientes SET senha = p_senha WHERE id = p_id;
+    END IF;
+
+    -- Obtém o endereço vinculado ao cliente
+    SELECT endereco_id INTO v_endereco_id FROM Clientes WHERE id = p_id;
+
+    -- Atualiza os campos do endereço, se fornecidos
+    IF p_rua IS NOT NULL THEN
+        UPDATE Enderecos SET rua = p_rua WHERE id = v_endereco_id;
+    END IF;
+
+    IF p_numero IS NOT NULL THEN
+        UPDATE Enderecos SET numero = p_numero WHERE id = v_endereco_id;
+    END IF;
+
+    IF p_complemento IS NOT NULL THEN
+        UPDATE Enderecos SET complemento = p_complemento WHERE id = v_endereco_id;
+    END IF;
+
+    IF p_bairro IS NOT NULL THEN
+        UPDATE Enderecos SET bairro = p_bairro WHERE id = v_endereco_id;
+    END IF;
+
+    IF p_cidade IS NOT NULL THEN
+        UPDATE Enderecos SET cidade = p_cidade WHERE id = v_endereco_id;
+    END IF;
+
+    IF p_estado IS NOT NULL THEN
+        UPDATE Enderecos SET estado = p_estado WHERE id = v_endereco_id;
+    END IF;
+END;
+$$;
+
+
+CREATE OR REPLACE PROCEDURE excluir_cliente(p_id INTEGER)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Verifica se o cliente existe
+    IF NOT EXISTS (SELECT 1 FROM Clientes WHERE id = p_id) THEN
+        RAISE EXCEPTION 'Cliente com ID % não encontrado.', p_id;
+    END IF;
+
+    -- Opcional: verifique se o cliente tem pedidos antes de excluir
+
+    DELETE FROM Clientes WHERE id = p_id;
+END;
+$$;
+
+
+
 -- EXEMPLO:
 -- CALL sp_fazer_pedido(
 --     2, -- > id do cliente
