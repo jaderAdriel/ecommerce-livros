@@ -211,6 +211,35 @@ CREATE TYPE Item_Info AS (
 );
 
 
+CREATE OR REPLACE PROCEDURE sp_inserir_item_pedido(
+    IN p_pedido_id INTEGER,
+    IN p_itens Item_Info[]
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    item_info Item_Info;
+    v_preco_livro DECIMAL(10, 2);
+    v_estoque_atual INTEGER;
+BEGIN
+    FOREACH item_info IN ARRAY p_itens
+    LOOP
+        SELECT preco, quantidade_estoque
+        INTO v_preco_livro, v_estoque_atual
+        FROM Livros WHERE id = item_info.livro_id;
+
+        IF v_estoque_atual < item_info.quantidade THEN
+            RAISE EXCEPTION 'Estoque insuficiente para o livro ID %. Solicitado: %, Disponível: %',
+                item_info.livro_id, item_info.quantidade, v_estoque_atual;
+        END IF;
+
+        INSERT INTO Itens_Pedido (pedido_id, livro_id, quantidade, preco_unitario)
+        VALUES (p_pedido_id, item_info.livro_id, item_info.quantidade, v_preco_livro);
+    END LOOP;
+END;
+$$;
+
+
 CREATE OR REPLACE PROCEDURE sp_fazer_pedido(
     IN p_cliente_id INTEGER,
     IN p_itens Item_Info[],
@@ -381,35 +410,5 @@ BEGIN
     -- Opcional: verifique se o cliente tem pedidos antes de excluir
 
     DELETE FROM Clientes WHERE id = p_id;
-END;
-$$;
-
-
-
-CREATE OR REPLACE PROCEDURE sp_inserir_item_pedido(
-    IN p_pedido_id INTEGER,
-    IN p_itens Item_Info[]
-)
-LANGUAGE plpgsql
-AS $$
-DECLARE
-    item_info Item_Info;
-    v_preco_livro DECIMAL(10, 2);
-    v_estoque_atual INTEGER;
-BEGIN
-    FOREACH item_info IN ARRAY p_itens
-    LOOP
-        SELECT preco, quantidade_estoque 
-        INTO v_preco_livro, v_estoque_atual
-        FROM Livros WHERE id = item_info.livro_id;
-
-        IF v_estoque_atual < item_info.quantidade THEN
-            RAISE EXCEPTION 'Estoque insuficiente para o livro ID %. Solicitado: %, Disponível: %',
-                item_info.livro_id, item_info.quantidade, v_estoque_atual;
-        END IF;
-        
-        INSERT INTO Itens_Pedido (pedido_id, livro_id, quantidade, preco_unitario)
-        VALUES (p_pedido_id, item_info.livro_id, item_info.quantidade, v_preco_livro);
-    END LOOP;
 END;
 $$;
