@@ -386,12 +386,30 @@ $$;
 
 
 
--- EXEMPLO:
--- CALL sp_fazer_pedido(
---     2, -- > id do cliente
---     ARRAY[ --> Array com linhas genericas, que representa itens do pedido (livro_id, quantidade)
---         ROW(6, 1)::Item_Info,
---         ROW(5, 3)::Item_Info
---     ],
---     '2025-07-05 14:30:00'
--- );
+CREATE OR REPLACE PROCEDURE sp_inserir_item_pedido(
+    IN p_pedido_id INTEGER,
+    IN p_itens Item_Info[]
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    item_info Item_Info;
+    v_preco_livro DECIMAL(10, 2);
+    v_estoque_atual INTEGER;
+BEGIN
+    FOREACH item_info IN ARRAY p_itens
+    LOOP
+        SELECT preco, quantidade_estoque 
+        INTO v_preco_livro, v_estoque_atual
+        FROM Livros WHERE id = item_info.livro_id;
+
+        IF v_estoque_atual < item_info.quantidade THEN
+            RAISE EXCEPTION 'Estoque insuficiente para o livro ID %. Solicitado: %, Disponível: %',
+                item_info.livro_id, item_info.quantidade, v_estoque_atual;
+        END IF;
+        
+        INSERT INTO Itens_Pedido (pedido_id, livro_id, quantidade, preco_unitario)
+        VALUES (p_pedido_id, item_info.livro_id, item_info.quantidade, v_preco_livro);
+    END LOOP;
+END;
+$$;
