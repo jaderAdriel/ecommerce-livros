@@ -55,7 +55,7 @@ BEGIN
     -- Retornar valor do desconto aplicado em R$
     RETURN ROUND(v_total * v_desconto, 2);
 END;
-$$ LANGUAGE plpgsql
+$$ LANGUAGE plpgsql;
 
 
 -- Função de atualizar quantidade em estoque após uma venda
