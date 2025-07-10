@@ -24,7 +24,7 @@ BEGIN
     SELECT
 	p_data_inicio,
 	p_data_fim,
-        p_cat.nome,
+        cat.nome,
         SUM(ip.quantidade),
         SUM(ip.quantidade * ip.preco_unitario)
     FROM pedidos p
@@ -187,7 +187,7 @@ BEGIN
 
     BEGIN
         INSERT INTO Livros(titulo, autor_id, isbn, editora_id, preco, quantidade_estoque, categoria_id)
-        VALUES (p_titulo, p_autor_id, p_isbn, editora_id, p_preco, p_quantidade_estoque, v_categoria_id);
+        VALUES (p_titulo, p_autor_id, p_isbn, v_editora_id, p_preco, p_quantidade_estoque, v_categoria_id);
 
         RAISE NOTICE 'LIVRO INSERIDO COM SUCESSO';
     EXCEPTION
