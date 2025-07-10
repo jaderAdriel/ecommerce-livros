@@ -865,22 +865,31 @@ INSERT INTO Carrinho (cliente_id, livro_id, quantidade) VALUES
 ---------------------------
 
 
-INSERT INTO relatorio_vendas_categoria (gerado_em, categoria, total_vendido, total_faturado) VALUES
-(CURRENT_TIMESTAMP + INTERVAL '0 microsecond', 'Ficção Científica', 255, 12689.50),
-(CURRENT_TIMESTAMP + INTERVAL '1 microsecond', 'Fantasia', 310, 16120.00),
-(CURRENT_TIMESTAMP + INTERVAL '2 microseconds', 'Romance', 452, 17890.80),
-(CURRENT_TIMESTAMP + INTERVAL '3 microseconds', 'Suspense e Mistério', 380, 18900.00),
-(CURRENT_TIMESTAMP + INTERVAL '4 microseconds', 'Terror', 190, 8550.00),
-(CURRENT_TIMESTAMP + INTERVAL '5 microseconds', 'Aventura', 280, 13160.40),
-(CURRENT_TIMESTAMP + INTERVAL '6 microseconds', 'Biografia e Memórias', 150, 9600.00),
-(CURRENT_TIMESTAMP + INTERVAL '7 microseconds', 'História', 175, 11375.50),
-(CURRENT_TIMESTAMP + INTERVAL '8 microseconds', 'Filosofia', 95, 5605.25),
-(CURRENT_TIMESTAMP + INTERVAL '9 microseconds', 'Poesia', 88, 3872.00),
-(CURRENT_TIMESTAMP + INTERVAL '10 microseconds', 'Infantojuvenil', 510, 15198.00),
-(CURRENT_TIMESTAMP + INTERVAL '11 microseconds', 'Autoajuda e Desenvolvimento Pessoal', 620, 24490.00),
-(CURRENT_TIMESTAMP + INTERVAL '12 microseconds', 'Negócios e Economia', 350, 22750.00),
-(CURRENT_TIMESTAMP + INTERVAL '13 microseconds', 'Clássicos', 215, 9675.00),
-(CURRENT_TIMESTAMP + INTERVAL '14 microseconds', 'Não-Ficção', 290, 16385.00);
+CALL sp_gerar_relatorio_vendas(CURRENT_DATE, CURRENT_DATE);
+
+CALL sp_gerar_relatorio_vendas(
+    DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month',
+    DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day'
+);
+
+CALL sp_gerar_relatorio_vendas('2023-12-01', '2023-12-31');
+
+CALL sp_gerar_relatorio_vendas('2024-01-01', '2024-03-31');
+
+CALL sp_gerar_relatorio_vendas('2023-01-01', '2023-12-31');
+
+CALL sp_gerar_relatorio_vendas(
+    DATE_TRUNC('year', CURRENT_DATE),
+    CURRENT_DATE
+);
+
+CALL sp_gerar_relatorio_vendas('2024-04-08', '2024-04-14');
+
+CALL sp_gerar_relatorio_vendas(CURRENT_DATE - INTERVAL '14 days', CURRENT_DATE);
+
+CALL sp_gerar_relatorio_vendas('2023-11-20', '2023-11-27');
+
+CALL sp_gerar_relatorio_vendas('2024-01-01', '2024-06-30');
 
 
 -- GERAÇÃO MASSIVA DE PEDIDOS
