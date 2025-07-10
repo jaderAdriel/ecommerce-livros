@@ -1,26 +1,19 @@
---  Exibe os livros mais vendidos em um determinado período.
-
+--  Exibe os livros mais vendidos em um determinado período. calculado a cada execução
 CREATE OR REPLACE VIEW vw_livros_mais_vendidos AS
-SELECT item.livro_id as livro_id
-    , SUM(item.quantidade) as total_vendido
-    , Livros.titulo as livro_titulo
-    , Autores.nome as autor_nome, Autores.id as autor_id
-FROM itens_pedido item
-JOIN Livros on item.livro_id = Livros.id
-JOIN Autores on Livros.autor_id = Autores.id
-JOIN Pedidos on item.pedido_id = Pedidos.id
-
-WHERE Pedidos.status != 'CANCELADO'
-    AND Pedidos.data_pedido >= CURRENT_TIMESTAMP - INTERVAL '1 year'
-    AND Pedidos.data_pedido <= CURRENT_TIMESTAMP
-
-GROUP BY item.livro_id, Livros.titulo, Autores.nome, Autores.id
+SELECT ip.livro_id as livro_id
+    , SUM(ip.quantidade) as total_vendido
+FROM itens_pedido ip
+JOIN Pedidos p on ip.pedido_id = p.id
+WHERE p.status != 'CANCELADO'
+    AND p.data_pedido BETWEEN CURRENT_TIMESTAMP - INTERVAL '1 year' AND CURRENT_TIMESTAMP
+GROUP BY ip.livro_id
 ORDER BY total_vendido DESC
 LIMIT 10;
 
--- EXPLAIN ANALYSE SELECT livro_id, total_vendido, livro_titulo, autor_nome, autor_id from vw_livros_mais_vendidos;
-
-select * from pedidos;
+SELECT livro_id, total_vendido, l.titulo
+from vw_livros_mais_vendidos
+join Livros l on l.id = livro_id
+;
 
 --  ○ vw_clientes_ativos: Exibe os clientes que realizaram compras nos últimos 6 meses.
 CREATE OR REPLACE VIEW vw_clientes_ativos AS
