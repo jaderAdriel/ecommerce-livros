@@ -11,8 +11,8 @@ JOIN Autores on Livros.autor_id = Autores.id
 JOIN Pedidos on item.pedido_id = Pedidos.id
 
 WHERE Pedidos.status != 'CANCELADO'
-    AND Pedidos.data_pedido > '2025-01-01 00:00:00'
-    AND Pedidos.data_pedido < '2026-01-01 00:00:00'
+    AND Pedidos.data_pedido >= CURRENT_TIMESTAMP - INTERVAL '1 year'
+    AND Pedidos.data_pedido <= CURRENT_TIMESTAMP
 
 GROUP BY item.livro_id, Livros.titulo, Autores.nome, Autores.id
 ORDER BY total_vendido DESC
@@ -20,7 +20,7 @@ LIMIT 10;
 
 -- EXPLAIN ANALYSE SELECT livro_id, total_vendido, livro_titulo, autor_nome, autor_id from vw_livros_mais_vendidos;
 
-
+select * from pedidos;
 
 --  ○ vw_clientes_ativos: Exibe os clientes que realizaram compras nos últimos 6 meses.
 CREATE OR REPLACE VIEW vw_clientes_ativos AS
