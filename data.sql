@@ -883,10 +883,41 @@ INSERT INTO relatorio_vendas_categoria (gerado_em, categoria, total_vendido, tot
 (CURRENT_TIMESTAMP + INTERVAL '14 microseconds', 'Não-Ficção', 290, 16385.00);
 
 
+-- GERAÇÃO MASSIVA DE PEDIDOS
+DO $$
+DECLARE
+    v_total_pedidos_a_gerar INTEGER := 50000;
+    v_cliente_ids INTEGER[]; v_livro_ids INTEGER[];
+    v_cliente_id INTEGER; v_livro_id INTEGER; v_itens_no_pedido INTEGER;
+    v_item_quantidade INTEGER; v_pedido_data TIMESTAMP;
+    v_itens_array Item_Info[];
+    i INTEGER; j INTEGER;
+BEGIN
+    RAISE WARNING 'Carregando IDs de clientes e livros para a memória...';
+    SELECT array_agg(id) INTO v_cliente_ids FROM Clientes;
+    SELECT array_agg(id) INTO v_livro_ids FROM Livros;
+    RAISE WARNING 'IDs carregados. Iniciando o loop de geração de pedidos...';
 
+    FOR i IN 1..v_total_pedidos_a_gerar LOOP
+        v_cliente_id := v_cliente_ids[1 + floor(random() * array_length(v_cliente_ids, 1))];
+        v_pedido_data := NOW() - (random() * 730) * '1 day'::interval;
+        v_itens_array := '{}';
+        v_itens_no_pedido := 1 + floor(random() * 4);
+        FOR j IN 1..v_itens_no_pedido LOOP
+            v_livro_id := v_livro_ids[1 + floor(random() * array_length(v_livro_ids, 1))];
+            v_item_quantidade := 1 + floor(random() * 3);
+            v_itens_array := array_append(v_itens_array, ROW(v_livro_id, v_item_quantidade)::Item_Info);
+        END LOOP;
 
+        BEGIN
+            CALL sp_fazer_pedido(v_cliente_id, v_itens_array, v_pedido_data);
+        EXCEPTION WHEN OTHERS THEN NULL; END;
 
-
+        IF i % 10000 = 0 THEN
+            RAISE WARNING 'Progresso: % / % pedidos gerados...', i, v_total_pedidos_a_gerar;
+        END IF;
+    END LOOP;
+END;$$ LANGUAGE plpgsql;
 
 
 
